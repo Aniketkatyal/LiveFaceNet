@@ -1,0 +1,80 @@
+def image_preprocessing():
+    image_text_open = open('/kaggle/input/dataset_B_FacialImages/EyeCoordinatesInfo_OpenFace.txt','r')
+    image_text_closed = open('/kaggle/input/dataset_B_FacialImages/EyeCoordinatesInfo_ClosedFace.txt','r')
+    image_text_open_ = [x.split(' ')[0] for x in image_text_open]
+    image_text_closed_ = [x.split(' ')[0] for x in image_text_closed]
+
+    image_info_closed = [ os.path.join('/kaggle/input/dataset_B_FacialImages/ClosedFace',b) for b in image_text_closed_] 
+    image_info_open =  [ os.path.join('/kaggle/input/dataset_B_FacialImages/OpenFace',b) for b in image_text_open_] 
+    image_final = image_info_closed + image_info_open
+
+    y = [str(0) if x in image_info_closed else str(1) for x in image_final]
+
+    image_data_input = [ cv2.imread(x) for x in image_final]
+    image_data_input = [i/255 for i in image_data_input]
+
+    X_train, X_test, y_train, y_test = train_test_split(image_data_input, y, test_size=0.33, random_state=0)
+    X_train = np.array(X_train)
+    y_train = np.array(y_train)
+
+    image_df = pd.DataFrame({'Paths': image_final,'target': y})
+    image_df = image_df.sample(frac=1).reset_index(drop=True)
+    train_image_df = image_df.iloc[:1623,:]
+    test_image_df = image_df.iloc[1623:,:]
+    
+    return (train_image_df,test_image_df)
+def save_model(model):
+    
+    model_json = model.to_json()
+    with open("model.json", "w") as json_file:
+        json_file.write(model_json)
+    # serialize weights to HDF5
+    model.save_weights("model.h5")
+
+def augment_data(train_df,test_df):
+    tr_datagen =  ImageDataGenerator(rescale=1.0/255, 
+                                 horizontal_flip=True,
+                                 vertical_flip=True)
+
+    ts_datagen = ImageDataGenerator(rescale=1.0/255)
+
+    train_gen = tr_datagen.flow_from_dataframe(train_df,x_col = 'Paths', y_col = 'target',
+                                target_size=(100,100),
+                                batch_size=32,
+                                class_mode="binary")
+
+    test_gen = ts_datagen.flow_from_dataframe(test_df,x_col = 'Paths', y_col = 'target',
+                               target_size=(100,100),
+                               batch_size=32,
+                               class_mode="binary",
+                               shuffle=False)
+    return train_gen,test_gen
+
+def train_model(train_gen,lr,loss,metric,epochs):
+    
+    ##COMPILE MODEL ##
+    img_input = Input(shape=(100,100,3))
+    x = stem(img_input)
+    output = resNet(x)
+    model=Model(img_input,output)
+    opt = keras.optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, amsgrad=True)
+    model.compile(optimizer = opt ,loss = loss,metrics = [metric])
+    
+    
+# ## Fitting the model
+model.fit_generator(train_gen,epochs = epochs,verbose = 1)
+    
+save_model(model)
+    
+return model
+    
+### EVALUATING THE MODEL
+def evaluate(model,test_gen,steps):
+    print('Evaluate model')
+    loss, acc = model.evaluate_generator(test_gen,steps = steps,verbose = 1)
+    
+## TRAINING ##    
+train_image_df,val_image_df = image_preprocessing()
+train_gen,test_gen = augment_data(train_image_df,val_image_df)
+model_ = train_model(train_gen,0.01,'sparse_categorical_crossentropy','accuracy',40)
+
