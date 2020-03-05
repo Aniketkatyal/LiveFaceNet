@@ -28,12 +28,11 @@ def predict(img, model):
 
 #### Initializing the Pre-trained cv2 files (.xml) ####
 def init():
-    face_cascPath = "C:/Users/aniket.katyal/Downloads/face_rec-master/face_rec-master/haarcascade_frontalface_alt.xml"
-    # face_cascPath = 'C://Users//aniket.katyal//Downloads//face_rec-master.zip//face_rec-master'
+    face_cascPath = "haarcascade_frontalface_alt.xml"
 
-    open_eye_cascPath = "C:/Users/aniket.katyal/Downloads/face_rec-master/face_rec-master/haarcascade_eye_tree_eyeglasses.xml"
-    left_eye_cascPath = "C:/Users/aniket.katyal/Downloads/face_rec-master/face_rec-master/haarcascade_lefteye_2splits.xml"
-    right_eye_cascPath = "C:/Users/aniket.katyal/Downloads/face_rec-master/face_rec-master/haarcascade_righteye_2splits.xml"
+    open_eye_cascPath = "haarcascade_eye_tree_eyeglasses.xml"
+    left_eye_cascPath "haarcascade_lefteye_2splits.xml"
+    right_eye_cascPath = "haarcascade_righteye_2splits.xml"
 
 
     dataset = 'C:/Users/aniket.katyal/Downloads/facedata'
